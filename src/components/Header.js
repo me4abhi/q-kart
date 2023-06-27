@@ -1,72 +1,63 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Avatar, Button, Stack } from "@mui/material";
+import { useHistory } from "react-router-dom";
 import Box from "@mui/material/Box";
 import React from "react";
-import { useHistory } from "react-router-dom";
 import "./Header.css";
 
 const Header = ({ children, hasHiddenAuthButtons }) => {
-  const username = localStorage.getItem("username");
-  const history = useHistory();
+  let history = useHistory();
 
-  const logoutUser = () => {
+  let userName = localStorage.getItem("username");
+
+  const clear = () => {
     localStorage.clear();
     window.location.reload();
   };
 
   return (
     <Box className="header">
-      <Box className="header-title">
+      <Box
+        className="header-title"
+        onClick={(e) => {
+          history.push("/");
+        }}
+      >
         <img src="logo_light.svg" alt="QKart-icon"></img>
       </Box>
-
       {children}
-
       {hasHiddenAuthButtons ? (
         <Button
           className="explore-button"
           startIcon={<ArrowBackIcon />}
           variant="text"
-          onClick={() => {
+          onClick={(e) => {
             history.push("/");
           }}
         >
           Back to explore
         </Button>
-      ) : username ? (
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1, sm: 2, md: 4 }}
-          alignItems="center"
-        >
-          <Avatar src="public/avatar.png" alt={username} />
-          <p style={{ color: "black" }}>{username}</p>
-          <Button
-            className="explore-button"
-            variant="text"
-            onClick={logoutUser}
-          >
+      ) : userName ? (
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar alt={userName} src="/public/avatar.png" />
+          <p> {userName}</p>
+          <Button variant="contained" onClick={clear}>
             LOGOUT
           </Button>
         </Stack>
       ) : (
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1, sm: 2, md: 4 }}
-        >
+        <Stack direction="row" spacing={2}>
           <Button
-            className="explore-button"
-            variant="text"
-            onClick={() => {
+            variant="contained"
+            onClick={(e) => {
               history.push("/login");
             }}
           >
             LOGIN
           </Button>
           <Button
-            className="explore-button"
-            variant="button"
-            onClick={() => {
+            variant="contained"
+            onClick={(e) => {
               history.push("/register");
             }}
           >

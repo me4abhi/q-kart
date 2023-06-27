@@ -1,4 +1,4 @@
-import { Button, CircularProgress, Stack, TextField } from "@mui/material";
+import { Button, Stack, TextField } from "@mui/material";
 import { Box } from "@mui/system";
 import axios from "axios";
 import { useSnackbar } from "notistack";
@@ -11,19 +11,9 @@ import "./Login.css";
 
 const Login = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const [user, setUser] = useState({
-    username: "",
-    password: "",
-  });
-  const [showLoader, setShowLoader] = useState(false);
+  const [username, updateUsername] = useState("");
+  const [password, udpatePassword] = useState("");
   const history = useHistory();
-
-  const inputChange = (event) => {
-    setUser({
-      ...user,
-      [event.target.name]: event.target.value,
-    });
-  };
 
   // TODO: CRIO_TASK_MODULE_LOGIN - Fetch the API response
   /**
@@ -51,30 +41,28 @@ const Login = () => {
    *
    */
   const login = async (formData) => {
-    const URL = config.endpoint + "/auth/login";
-    setShowLoader(true);
-
-    if (validateInput(formData)) {
-      await axios
-        .post(URL, formData)
-        .then((response) => {
-          enqueueSnackbar("Logged in successfully", { variant: "success" });
-          setShowLoader(false);
-          persistLogin(
-            response.data.token,
-            response.data.username,
-            response.data.balance
+    //  console.log(formData)
+    let url = config.endpoint;
+    try {
+      let res = await axios.post(`${url}/auth/login`, formData);
+      if (res.data.success) {
+        enqueueSnackbar("Logged in successfully", { variant: "success" });
+        let { token, username, balance } = res.data;
+        persistLogin(token, username, balance - 0);
+      }
+    } catch (e) {
+      axios.post(`${url}/auth/login`, formData).catch((e) => {
+        if (e.response) {
+          console.log(e.response);
+          enqueueSnackbar(e.response.data.message, { variant: "error" });
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          enqueueSnackbar(
+            "Something went wrong. Check that the backend is running, reachable and returns valid JSON.",
+            { variant: "error" }
           );
-        })
-        .catch((error) => {
-          error.response.status >= 400
-            ? enqueueSnackbar(error.response.data.message, { variant: "error" })
-            : enqueueSnackbar(
-                "Something went wrong. Check that the backend is running, reachable and returns valid JSON.",
-                { variant: "error" }
-              );
-          setShowLoader(false);
-        });
+        }
+      });
     }
   };
 
@@ -93,12 +81,21 @@ const Login = () => {
    * -    Check that username field is not an empty value - "Username is a required field"
    * -    Check that password field is not an empty value - "Password is a required field"
    */
-  const validateInput = (data) => {
-    if (data.username === "") {
+
+  let datas = {
+    username: username,
+    password: password,
+  };
+  const evenHandler = () => {
+    validateInput(datas) && login(datas);
+  };
+
+  const validateInput = ({ username, password }) => {
+    if (username === "") {
       enqueueSnackbar("Username is a required field", { variant: "warning" });
       return false;
     }
-    if (data.password === "") {
+    if (password === "" || password.length < 6) {
       enqueueSnackbar("Password is a required field", { variant: "warning" });
       return false;
     }
@@ -121,11 +118,11 @@ const Login = () => {
    * -    `username` field in localStorage can be used to store the username that the user is logged in as
    * -    `balance` field in localStorage can be used to store the balance amount in the user's wallet
    */
+
   const persistLogin = (token, username, balance) => {
     localStorage.setItem("token", token);
     localStorage.setItem("username", username);
     localStorage.setItem("balance", balance);
-
     history.push("/");
   };
 
@@ -136,47 +133,36 @@ const Login = () => {
       justifyContent="space-between"
       minHeight="100vh"
     >
-      <Header hasHiddenAuthButtons />
+      <Header hasHiddenAuthButtons={true} />
       <Box className="content">
         <Stack spacing={2} className="form">
-          <h2 className="title">Login</h2>
+          <h2 className={"title"}>Login</h2>
           <TextField
             id="username"
-            label="Username"
-            variant="outlined"
-            title="username"
+            label="username"
             name="username"
-            placeholder="Enter Username"
+            value={username}
+            onChange={(e) => updateUsername(e.target.value)}
+            type="text"
+            variant="outlined"
             fullWidth
-            onChange={inputChange}
           />
           <TextField
             id="password"
-            variant="outlined"
-            label="Password"
-            name="password"
+            label="password"
             type="password"
+            name="password"
+            value={password}
+            onChange={(e) => udpatePassword(e.target.value)}
+            variant="outlined"
             fullWidth
-            placeholder="Enter password"
-            onChange={inputChange}
           />
-          {!showLoader && (
-            <Button
-              className="button"
-              variant="contained"
-              onClick={() => login(user)}
-            >
-              LOGIN TO QKART
-            </Button>
-          )}
-          {showLoader && (
-            <Box display="flex" justifyContent="center" alignItems="center">
-              <CircularProgress />
-            </Box>
-          )}
+          <Button className="button" variant="contained" onClick={evenHandler}>
+            LOGIN TO QKART
+          </Button>
           <p className="secondary-action">
-            Don't have an account?{" "}
-            <Link className="link" to="/register">
+            Don’t have an account?{" "}
+            <Link to="/register" className={"link"}>
               Register now
             </Link>
           </p>
